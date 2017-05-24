@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+</head>
+<body>
+    <canvas id="screen" width="500" height="500" style="border:1px solid #ccc"></canvas>
+</body>
+<script type="text/javascript">
+    var canvas = document.getElementById('screen');
+    var ctx = canvas.getContext('2d');
+
+    var cube = [
+        [-1,-1,-1],
+        [1,-1,-1],
+        [1,1,-1],
+        [-1,1,-1],
+
+        [-1,-1,1],
+        [1,-1,1],
+        [1,1,1],
+        [-1,1,1]
+    ];
+
+    var fov = 45;
+    var fl = 250;
+    var angle = 0;
+
+    function render(ts) {
+        ctx.clearRect(0, 0, 500, 500);
+
+        cube.forEach(function(coord, i) {
+            var x = coord[0];
+            var y = coord[1];
+            var z = coord[2];
+
+            var c = Math.cos(angle);
+            var s = Math.sin(angle);
+
+            // 코마신신코 !
+            // y axis
+            var rx = c*x - s*z;
+            var rz = s*x + c*z;
+            // z axis
+            var ry = s*rx + c*y;
+            rx = c*rx - s*y;
+
+
+            // // s,t
+            // var mz = z - 5;
+            // var sx = (x / -mz) * fl;
+            // var sy = (y / -mz) * fl;
+
+            // s,t
+            var tz = rz - 5;
+            var sx = (rx / -tz) * fl + canvas.width/2;
+            var sy = (ry / -tz) * fl + canvas.height/2;
+
+            ctx.beginPath();
+            ctx.arc(sx, sy, tz + 7, 0, 2 * Math.PI, true);
+            ctx.stroke();
+
+        });
+
+        angle += 2 * Math.PI / 360;
+        angle %= 2 * Math.PI;
+
+        window.requestAnimationFrame(render);
+    }
+
+    window.requestAnimationFrame(render);
+</script>
+</html>

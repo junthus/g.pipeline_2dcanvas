@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style type="text/css">
+        html, body {
+            margin:0;
+            padding: 0;
+        }
+    </style>
+    <script type="text/javascript" src="./gl-matrix.js"></script>
+</head>
+<body>
+    <canvas id="canvas" width="500px" height="500px" style="border:1px solid #ccc"></canvas>
+</body>
+<script type="text/javascript">
+var el = document.getElementById('canvas');
+var ctx = el.getContext('2d');
+
+var model = [
+    1, 1, -1,
+    -1, 1, -1,
+    -1, -1, -1,
+    1, -1, -1,
+
+    1, 1, 1,
+    -1, 1, 1,
+    -1, -1, 1,
+    1, -1, 1
+];
+
+var indexes = [
+    0, 3, 2,
+    0, 2, 1, //뒤
+
+    0, 1, 5,
+    0, 5, 4, //위
+
+    0, 4, 7,
+    0, 7, 3, //오
+
+    6, 5, 1,
+    6, 1, 2, //왼
+
+    6, 4, 5,
+    6, 7, 4, //앞
+
+    6, 7, 3,
+    6, 3, 2 //밑
+];
+
+var fl = 250;
+var degree = 0;
+
+var mvp = mat4.fromValues(
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, 0, 1);
+
+function getMat(degree) {
+    //s, r, t, p
+    var out = mat4.create();
+    var rad = Math.PI/180*degree;
+
+    var s = Math.sin(rad);
+    var c = Math.cos(rad);
+
+    console.log(degree, s,c)
+
+    var ry = mat4.fromValues(
+            c, 0, -s, 0, //x
+            0, 1, 0, 0, //y
+            s, 0, c, 0, //z
+            0, 0, 0, 1);
+    var rx = mat4.fromValues(
+            1, 0, 0, 0, //x
+            0, c, -s, 0, //y
+            0, s, c, 0, //z
+            0, 0, 0, 1);
+    var t = mat4.fromValues(
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0,
+            0, 0, -10, 1);
+    var p = mat4.fromValues(
+            fl, 0, 0, 0,
+            0, fl, 0, 0,
+            0, 0, -1, 0,
+            0, 0, 0, 1);
+
+    mat4.multiply(out, ry, rx);
+    mat4.multiply(out, t, out);
+    mat4.multiply(out, p, out);
+
+    return out;
+}
+
+function render(startDegree, once) {
+    if (startDegree) {
+        degree = startDegree;
+    }
+
+    mvp = getMat(degree);
+    ctx.clearRect(0, 0, el.width, el.height);
+
+    for (var i = 0; i < model.length/3; i++) {
+        var out = vec4.create();
+        var point = vec4.fromValues(model[i * 3], model[i * 3 + 1], model[i * 3 + 2], 1);
+
+        mat4.multiply(out, mvp, point);
+
+        var z = out[2];
+        var w = out[3];
+
+        var x = out[0]/z/w + el.width/2;
+        var y = out[1]/z/w + el.height/2;
+
+        // console.log(out, ' |', x, y, z);
+
+        ctx.beginPath();
+        ctx.arc(x, y, 1, 0, 2*Math.PI, true);
+        ctx.fill();
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(0,0);
+
+    for (var i = 0; i < indexes.length/3; i++) {
+        var p1 = 3*indexes[i * 3];
+        var p2 = 3*indexes[i * 3 + 1];
+        var p3 = 3*indexes[i * 3 + 2];
+        var triangle = [
+            model[p1], model[p1 + 1], model[p1 + 2],
+            model[p2], model[p2 + 1], model[p2 + 2],
+            model[p3], model[p3 + 1], model[p3 + 2]
+        ];
+        var startX, startY;
+
+        console.log(p1, p2, p3)
+        console.log(triangle);
+
+        for (var j = 0; j < 3; j++) {
+            var out = vec4.create();
+            var point = vec4.fromValues(triangle[j * 3], triangle[j * 3 + 1], triangle[j * 3 + 2], 1);
+
+            mat4.multiply(out, mvp, point);
+
+            var z = out[2];
+            var w = out[3];
+
+            var x = out[0]/z/w + el.width/2;
+            var y = out[1]/z/w + el.height/2;
+
+            if (j === 0) {
+                ctx.beginPath();
+                ctx.moveTo(x, y);
+                startX = x;
+                startY = y;
+            } else if (j === 2) {
+                ctx.lineTo(x, y);
+                ctx.lineTo(startX, startY);
+            } else {
+                ctx.lineTo(x, y);
+            }
+
+            ctx.stroke();
+        }
+    }
+
+    once || requestAnimationFrame(render);
+
+    degree += 1;
+    degree %= 360;
+}
+
+render(0, 1);
+// render();
+
+document.addEventListener('keydown', function(e){
+    if (e.which === 13) {
+        render(degree += 1, 1);
+    }
+});
+</script>
+</html>

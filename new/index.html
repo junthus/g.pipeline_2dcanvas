@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <style type="text/css">
+        html, body {
+            margin:0;
+            padding: 0;
+        }
+    </style>
+    <script type="text/javascript" src="./../gl-matrix.js"></script>
+    <script type="text/javascript" src="./util.js"></script>
+    <script type="text/javascript" src="./model/cube.js"></script>
+    <script type="text/javascript" src="./model/sphere.js"></script>
+    <script type="text/javascript" src="./Obj.js"></script>
+    <script type="text/javascript" src="./Cam.js"></script>
+    <script type="text/javascript" src="./Renderer.js"></script>
+</head>
+<body>
+    <canvas id="canvas" width="500px" height="500px" style="border:1px solid #ccc"></canvas>
+</body>
+<script type="text/javascript">
+var el = document.getElementById('canvas');
+var degree = 0,
+    longseg = 10,
+    latseg = 20;
+
+var cam = new Cam(45, 1, 0.1, 1000);
+cam.move(0, 0, 10);
+
+var renderer = new Renderer(el);
+
+var cubeModel = new Cube();
+var sphereModel = new Sphere(longseg, latseg);
+
+var cube = new Obj(cubeModel);
+var sphere = new Obj(sphereModel);
+
+cube.setTranslation(2, 0, 0);
+cube.setScale(0.5);
+sphere.addChild(cube);
+
+renderer.setFront('ccw');
+renderer.setCam(cam.getMat());
+// var sphereId = renderer.link(sphere);
+renderer.link(sphere);
+
+var degree = 0,
+    go = true,
+    req;
+
+function singleFrame(infinity) {
+    sphere.resetRotate(0);
+    sphere.setRotateX(degree);
+    sphere.setRotateY(degree);
+
+    renderer.render();
+
+    if (infinity) {
+        req = requestAnimationFrame(singleFrame);
+    } else {
+        cancelAnimationFrame(req);
+    }
+
+    degree += 0.5;
+    degree %= 360;
+}
+
+singleFrame(go);
+
+document.addEventListener('keydown', function(e){
+    if (e.which === 13 || e.which === 32) {
+        go = !go;
+
+        singleFrame(go);
+    }
+});
+</script>
+</html>
